@@ -56,11 +56,11 @@ def add_to_queue(request):
                 "message": "Service available only Tue-Thu, 9AM-11AM",
             })
     elif service_area == 'Animal Bite Treatment':
-        if weekday not in [0, 1, 2, 3, 4] or hour < 9 or hour >= 15:
+        if weekday not in [0, 1, 2, 3, 4] or hour < 9 or hour >= 18:
 
             return Response({
                 "status": "error",
-                "message": "Service available only Mon-Fri, 9AM-3PM",
+                "message": "Service available only Mon-Fri, 9AM-6PM",
             })
  
     try:
