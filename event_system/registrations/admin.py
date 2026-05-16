@@ -3,7 +3,7 @@ from .models import Patient, Staff, Queue, LabTest
 from django.utils.translation import gettext_lazy as _
 
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ('formatted_id', 'first_name', 'last_name', 'contact_number', 'created_at')
+    list_display = ('formatted_id', 'first_name', 'last_name', 'barangay', 'contact_number', 'created_at')
     search_fields = ('first_name', 'last_name', 'id')
     
     def formatted_id(self, obj):
@@ -26,6 +26,7 @@ class ExactDateFilter(admin.SimpleListFilter):
 
 class QueueAdmin(admin.ModelAdmin):
     list_display = ('formatted_queue', 'patient_id_formatted', 'patient', 'service_area', 'queue_date', 'status')
+    list_editable = ('status',)
     list_filter = ('service_area', ExactDateFilter, 'status')
     date_hierarchy = 'queue_date'
     

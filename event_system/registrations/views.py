@@ -12,9 +12,10 @@ def register_patient(request):
     date_of_birth = request.data.get('date_of_birth')
     gender = request.data.get('gender')
     contact_number = request.data.get('contact_number')
+    barangay = request.data.get('barangay')
  
     # DFD: Validate
-    if not all([first_name, last_name, date_of_birth, gender, contact_number]):
+    if not all([first_name, last_name, date_of_birth, gender, contact_number, barangay]):
         return Response({"status": "error", "message": "Missing required fields"})
  
     # DFD: Save Patient
@@ -24,6 +25,7 @@ def register_patient(request):
         date_of_birth=date_of_birth,
         gender=gender,
         contact_number=contact_number,
+        barangay=barangay,
     )
  
     formatted_patient_id = f"PAT-{patient.id:04d}"
@@ -113,6 +115,7 @@ def add_to_queue(request):
         "status": "success",
         "message": "Patient added to queue",
         "queue_number": formatted_number,
+        "patient_id": f"PAT-{patient.id:04d}",
         "service_area": entry.service_area,
     })
  
