@@ -1,4 +1,5 @@
 from django.db import models
+import django.utils.timezone
  
  
 class Patient(models.Model):
@@ -28,7 +29,7 @@ class Queue(models.Model):
     queue_number = models.IntegerField()
     status = models.CharField(max_length=20, default='Waiting')
     check_in_time = models.DateTimeField(auto_now_add=True)
-    queue_date = models.DateField(auto_now_add=True)
+    queue_date = models.DateField(default=django.utils.timezone.now)
  
     def __str__(self):
         return f"#{self.queue_number} - {self.service_area}"

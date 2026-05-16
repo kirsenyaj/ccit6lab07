@@ -26,10 +26,12 @@ def register_patient(request):
         contact_number=contact_number,
     )
  
+    formatted_patient_id = f"PAT-{patient.id:04d}"
+
     return Response({
         "status": "success",
         "message": "Patient registered successfully",
-        "patient_id": patient.id,
+        "patient_id": formatted_patient_id,
     })
  
  
@@ -38,29 +40,34 @@ def register_patient(request):
 def add_to_queue(request):
     patient_id = request.data.get('patient_id')
     service_area = request.data.get('service_area')
+    queue_date_str = request.data.get('queue_date')
  
     # DFD: Validate input
     if not patient_id or not service_area:
         return Response({"status": "error", "message": "Missing data"})
+  
+    if queue_date_str:
+        try:
+            queue_date = datetime.strptime(queue_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return Response({"status": "error", "message": "Invalid date format"})
+    else:
+        queue_date = datetime.now().date()
  
-    # DFD: Validate schedule (clinic operating hours)
-    now = datetime.now()
-    weekday = now.weekday()  # 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri
-    hour = now.hour
+    # DFD: Validate schedule (based on selected date's day of week)
+    weekday = queue_date.weekday()  # 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
  
     if service_area in ['Consultation', 'Laboratory']:
-        if weekday not in [1, 2, 3] or hour < 9 or hour >= 11:
-
+        if weekday not in [1, 2, 3]:
             return Response({
                 "status": "error",
-                "message": "Service available only Tue-Thu, 9AM-11AM",
+                "message": "This service is only available on Tuesdays, Wednesdays, and Thursdays between 9AM and 11AM."
             })
     elif service_area == 'Animal Bite Treatment':
-        if weekday not in [0, 1, 2, 3, 4] or hour < 9 or hour >= 18:
-
+        if weekday not in [0, 1, 2, 3, 4]:
             return Response({
                 "status": "error",
-                "message": "Service available only Mon-Fri, 9AM-6PM",
+                "message": "This service is only available from Monday to Friday between 9AM and 3PM."
             })
  
     try:
@@ -71,21 +78,41 @@ def add_to_queue(request):
     # DFD: Generate queue number
     last = Queue.objects.filter(
         service_area=service_area,
-        queue_date=now.date(),
+        queue_date=queue_date,
     ).order_by('-queue_number').first()
     next_number = (last.queue_number + 1) if last else 1
+ 
+    # Check Daily Limit
+    DAILY_LIMIT = 50  # Admin can change this number to adjust the maximum patients per day
+    if next_number > DAILY_LIMIT:
+        return Response({
+            "status": "error", 
+            "message": f"Sorry, the daily limit of {DAILY_LIMIT} appointments for {service_area} on this date has been reached. Please select another date."
+        })
  
     # DFD: Save Queue
     entry = Queue.objects.create(
         patient=patient,
         service_area=service_area,
         queue_number=next_number,
+        queue_date=queue_date,
     )
  
+    # Format queue number with service prefix
+    prefix = ""
+    if service_area == 'Consultation':
+        prefix = "CON-"
+    elif service_area == 'Laboratory':
+        prefix = "LAB-"
+    elif service_area == 'Animal Bite Treatment':
+        prefix = "ABT-"
+
+    formatted_number = f"{prefix}{entry.queue_number:03d}"
+
     return Response({
         "status": "success",
         "message": "Patient added to queue",
-        "queue_number": entry.queue_number,
+        "queue_number": formatted_number,
         "service_area": entry.service_area,
     })
  
